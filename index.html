@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="main.css">
+    <meta name="robots" content="noindex,nofollow"/>
+    <title>Чат с помощью nodejs и socket.io</title>
+</head>
+<body>
+<div class="demo">
+    <h1>Чат с помощью nodejs и socket.io</h1>
+	<h5>На основе примера с http://socket.io/get-started/chat/</h5>
+    <div class="chat">
+        <div class="messages" id="messages"></div>
+
+        <div class="panel">
+            <span class="nick"></span> <input type="text" name="message_text" id="message_text">
+            <button type="button" id="message_btn">Отправить</button>
+        </div>
+    </div>
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://localhost:8008/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var socket = io.connect('http://localhost:8008');
+        var name = 'Пользователь_' + (Math.round(Math.random() * 10000));
+        var messages = $("#messages");
+        var message_txt = $("#message_text")
+        $('.chat .nick').text(name);
+
+        function msg(nick, message) {
+			var m = ((nick != '')? safe(nick) + ': ' : '')  + safe(message) + '<BR/>';
+            messages
+                    .append(m)
+                    .scrollTop(messages[0].scrollHeight);
+        }
+
+        function msg_system(message) {
+            var m = safe(message) + '<BR/>';
+            messages
+                    .append(m)
+                    .scrollTop(messages[0].scrollHeight);
+        }
+
+        socket.on('connecting', function () {
+            msg_system('Соединение...');
+        });
+		
+		socket.on('connect', function () {
+			msg_system('Соединение установленно!');
+			socket.emit("message", {message: 'Присоединение ' + name, name: ''});
+		});
+		
+		socket.on('connect_notify', function (data) {
+            msg(data.name, data.message + 'zzzzz');
+            message_txt.focus();
+        });
+
+        socket.on('message', function (data) {
+            msg(data.name, data.message);
+            message_txt.focus();
+        });
+
+        $("#message_btn").click(function () {
+            var text = $("#message_text").val();
+            if (text.length <= 0)
+                return;
+            message_txt.val("");
+            socket.emit("message", {message: text, name: name});
+        });
+
+        function safe(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+    });
+</script>
+</body>
+</html>
